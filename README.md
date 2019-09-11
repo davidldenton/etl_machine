@@ -1,3 +1,3 @@
-## Greater Portland useR Group - September 26th 2019
+## The ETL Machine: An R/Shiny approach to ETL orchestration
 
-This repo contains the data sources and code for the meetup on 2019-09-26.
+A work-in-progress demo of this project will be presented at the Greater Portland useR meetup on 2019-09-26.
