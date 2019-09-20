@@ -36,7 +36,7 @@ execute_sql <- function(connection,
     log_list <- list()
     
     log_start <- tibble::tibble(
-      pid = paste0(Sys.info()["user"], '-', digest::sha1(Sys.getpid()), '-', digest::sha1(Sys.Date())),
+      pid = paste0(Sys.info()["user"], '-', Sys.getpid(), '-', digest::sha1(Sys.Date())),
       script_name = stringr::str_extract(file_path, '[A-Za-z_]*\\.sql'),
       parameters = paste(purrr::map2_chr(names(parameters), purrr::flatten_chr(parameters), ~paste(.x, ' = ', .y)), collapse = ' | '),
       user_name = as.character(Sys.info()["user"])
