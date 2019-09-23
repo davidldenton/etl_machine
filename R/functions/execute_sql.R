@@ -1,7 +1,7 @@
 execute_sql <- function(connection,
                         file_path,
                         parameters = NA,
-                        log_table = NA,
+                        log_table = 'etl.run_log',
                         quit_on_error = FALSE,
                         batch_separator = '\\bGO\\n'){
     

@@ -5,6 +5,7 @@ GO
 --Create etl log table
 CREATE TABLE IF NOT EXISTS etl.run_log (
   log_event_id SERIAL PRIMARY KEY
+  ,pid VARCHAR(200)
   ,script_name VARCHAR(100)
   ,job_name VARCHAR(100)
   ,batch_number INTEGER
