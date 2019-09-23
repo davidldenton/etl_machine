@@ -4,14 +4,23 @@ execute_sql <- function(connection,
                         log_table = 'etl.run_log',
                         quit_on_error = FALSE,
                         batch_separator = '\\bGO\\n'){
-    
+  
+    # Check that odbc connection is valid
     assertthat::assert_that(odbc::dbIsValid(connection), msg = 'Not a valid database connection.')
+  
+    # Check that the SQL script being called exists
     assertthat::assert_that(file.exists(file_path), msg = 'SQL script does not exist at specified file path.')
+    
+    # Check that the SQL script is a valid text file
     assertthat::assert_that(is.character(readr::read_file(file_path)), msg = 'File is not a valid SQL script.')
+    
+    # Check that the parameters are a list object
     assertthat::assert_that(is.list(parameters), msg = 'Parameters are not a valid list object.')
+    
+    # Check that the parameters were input correctly
     assertthat::assert_that(length(names(parameters)) == length(parameters), msg = 'Not all parameters are named.')
     
-    
+    # Check that log table exists, if log_table != NA
     if(!is.na(log_table)){
         log_schema <- stringr::str_replace(log_table, '(.*)(\\..*)', '\\1')
         log_tbl <- stringr::str_replace(log_table, '(.*\\.)(.*)', '\\2')
@@ -19,10 +28,13 @@ execute_sql <- function(connection,
                                 msg = 'Log table does not exist - Use NA as log_table argument to disable logging')
     }
     
+    # Read SQL script
     sql_script <- readr::read_file(file_path)
     
+    # Add parameter identifiers (@) to both sides of parameter names
     names(parameters) <- paste0('@', names(parameters), '@')
     
+    # Replace parameter names with parameter values in SQL script
     if(length(parameters) == 1){
       sql_script <- stringr::str_replace_all(sql_script, names(parameters), parameters[[1]])
     } else if(length(parameters) > 1){
@@ -31,26 +43,38 @@ execute_sql <- function(connection,
         }
     }
     
+    # Break SQL script into N batches to be sent to the server sequentially
     sql_batches <- stringr::str_split(sql_script, batch_separator, simplify = TRUE)
     
+    # Create log object
     log_list <- list()
     
+    # Begin populating log object
     log_start <- tibble::tibble(
+      # Create a process identifier
       pid = paste0(Sys.info()["user"], '-', Sys.getpid(), '-', digest::sha1(Sys.Date())),
+      # Extract the name of the SQL script from the file path
       script_name = stringr::str_extract(file_path, '[A-Za-z_]*\\.sql'),
+      # Flatten the parameters into a single record, separated by '|'
       parameters = paste(purrr::map2_chr(names(parameters), purrr::flatten_chr(parameters), ~paste(.x, ' = ', .y)), collapse = ' | '),
+      # Record name of user executing the script
       user_name = as.character(Sys.info()["user"])
     )
     
+    # Count batches in SQL script, as identified by the batch_separator argument
     batch_count <- length(sql_batches)
     
+    # Loop through batches and execute on server
     for(i in 1:batch_count){
         
         tryCatch(
             {
+                # Remove -- style batch comment in SQL script
                 sql_script <- stringr::str_replace_all(sql_batches[[i]], '--.*\\n', '')
+                # Remove slash/star style comments from SQL code
                 sql_script <- stringr::str_replace_all(sql_script, '/\\*.*\\*/', '')
                 
+                # Extract -- style comment from batch and save as job name
                 job_name <- stringr::str_extract(sql_batches[[i]], '--.*\\n')
                 job_name <- stringr::str_replace(job_name, '--', '')
                 job_name <- stringr::str_replace(job_name, '\\n', '')
@@ -62,15 +86,17 @@ execute_sql <- function(connection,
                     res <- DBI::dbExecute(connection, sql_script)
                 })
                 
+                # tryCatch did not find an error, so exit status = 0
                 exit_status <- 0
                 duration <- round(duration[3], 3)
+                # Record message returned from server
                 message <- stringr::str_replace_all(res, '\\n', ' | ')
-                
+            # Catch error-related information
             }, error = function(e){
                 message <<- stringr::str_replace_all(conditionMessage(e), '\\n', ' | ')
                 exit_status <<- 1
                 duration <<- NA
-                
+            # Concatenate all log info into a single record    
             }, finally = {
                 log_entry <- log_start
                 log_entry$job_name <- job_name
@@ -86,6 +112,7 @@ execute_sql <- function(connection,
                 
                 cat(paste(stringr::str_extract(file_path, '[A-Za-z_]*\\.sql'), '-', job_name, '-', 'batch', batch_number, '-', 'exit status =', exit_status, '\n'))
                 
+                # Write log record to database table specified by log_table argument
                 tryCatch(
                     {
                         if(!is.na(log_table)){
@@ -96,18 +123,20 @@ execute_sql <- function(connection,
                         cat(paste('Could not write log record for batch number', i, 'to', log_table, '\n', conditionMessage(err), '\n'))
                     }
                 )
-                
-               if(quit_on_error == TRUE){
-                 assertthat::assert_that(exit_status == 0, msg = 'Error during ETL process. See etl.run_log for details')
+                # Exit function when one of the batches return an error, if log_table argument is not NA
+                if(quit_on_error == TRUE){
+                  assertthat::assert_that(exit_status == 0, msg = 'Error during ETL process. See etl.run_log for details')
                }
                 
             }
         )
-
+        
+        # Bind log records into a single dataframe
         log_records <- dplyr::bind_rows(log_list)
   
     }
-
+    
+    # Return log records to R session
     return(log_records)
 
 }
