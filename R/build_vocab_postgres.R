@@ -11,12 +11,12 @@ con <- DBI::dbConnect(odbc::odbc(),
                       port = 5432)
 
 # Create etl schema
-etl01 <- execute_sql(connection = con,
-                     file_path = 'sql/postgreSQL/create_schema.sql',
-                     parameters = list(
-                         'database' = 'dagon',
-                         'schema_name' = 'etl'),
-                     log_table = NA)
+    etl01 <- execute_sql(connection = con,
+                         file_path = 'sql/postgreSQL/create_schema.sql',
+                         parameters = list(
+                             'database' = 'dagon',
+                             'schema_name' = 'etl'),
+                         log_table = NA)
 
 # Create etl.run_log table
 etl02 <- execute_sql(connection = con,
@@ -57,3 +57,4 @@ etl07 <- execute_sql(connection = con,
                          'database' = 'dagon'))
 
 DBI::dbDisconnect(con)
+
