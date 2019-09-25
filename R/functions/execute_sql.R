@@ -9,14 +9,14 @@
 #' @param parameters A named list of parameters that will be used
 #'   to substitute placeholders in the SQL script with user-defined
 #'   values.
-#' @param log_table The name of the table on the database where
-#'   log records will be written. Change this value to NA to
-#'   prevent writing log records to the database.
+#' @param log_table The name of the schema and table on the database
+#'   where log records will be written (e.g. "schema.table").
+#'   Change this value to NA to prevent writing log records to the database.
 #' @param quit_on_error A logical scalar. Should the function
 #'   exit if it encounters an error?
-#' @param batch_separator The keyword used to break the SQL script   
-#'   into batches
-#' @return A data.frame containing the log records
+#' @param batch_separator A regex expression used to break the SQL script
+#'   into batches.
+#' @return A data.frame containing the log records.
 #' @example 
 #' execute_sql(connection = con,
 #'   file_path = "sql/postgreSQL/create_schema.sql",
