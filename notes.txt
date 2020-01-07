@@ -1,0 +1,7 @@
+execute function:
+make log argument correspond to table name
+add stop if error argument
+
+
+log_table create script:
+parameterize table name
