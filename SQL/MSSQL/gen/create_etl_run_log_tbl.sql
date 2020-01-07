@@ -11,14 +11,14 @@ IF(OBJECT_ID('etl.run_log') IS NULL)
 
     CREATE TABLE etl.run_log (
       log_event_id INTEGER IDENTITY(1,1) PRIMARY KEY
-      ,script_name VARCHAR(200)
-      ,job_name VARCHAR(200)
-      ,batch_number INT
-      ,param_names VARCHAR(255)
-      ,param_values VARCHAR(255)
+      ,pid VARCHAR(200)
+      ,script_name VARCHAR(100)
+      ,job_name VARCHAR(100)
+      ,batch_number INTEGER
+      ,parameters VARCHAR(250)
       ,start_dtm DATETIME
       ,duration NUMERIC(18, 3)
-      ,exit_status TINYINT
-      ,message VARCHAR(1500)
-      ,user_name VARCHAR(100)
+      ,exit_status SMALLINT
+      ,message VARCHAR(1000)
+      ,user_name VARCHAR(50)
     );
